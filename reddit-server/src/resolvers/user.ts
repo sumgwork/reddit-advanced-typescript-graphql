@@ -9,12 +9,13 @@ import {
   Query,
   Resolver,
 } from "type-graphql";
-import { COOKIE_NAME } from "../constants";
+import { v4 } from "uuid";
+import { COOKIE_NAME, FORGOT_PASSWORD_PREFIX } from "../constants";
 import { User } from "../entities/User";
 import { MyContext } from "../types";
+import { sendEmail } from "../utils/sendEmail";
 import { validateRegister } from "../utils/validateRegister";
 import { UsernamePasswordInput } from "./UsernamePasswordInput";
-
 @ObjectType()
 class FieldError {
   @Field()
@@ -73,8 +74,6 @@ export class UserResolver {
         .returning("*");
       user = result[0];
     } catch (error) {
-      console.log("error", error);
-
       if (
         error.code === "23505" //|| error.detail.includes("already exists")) {
       ) {
@@ -153,8 +152,78 @@ export class UserResolver {
   }
 
   @Mutation(() => Boolean)
-  async forgotPassword(@Arg("email") email: string, @Ctx() { em }: MyContext) {
-    // const user = await em.findOne(User, { email });
+  async forgotPassword(
+    @Arg("email") email: string,
+    @Ctx() { em, redis }: MyContext
+  ) {
+    const user = await em.findOne(User, { email });
+    if (!user) {
+      return true; // do nothing
+    }
+
+    const token = v4();
+    await redis.set(
+      FORGOT_PASSWORD_PREFIX + token,
+      user.id,
+      "ex",
+      1000 * 60 * 60 * 24 * 3
+    ); // 3 days
+    await sendEmail(
+      email,
+      "Reset Password for Reddit",
+      `<a href="http://localhost:3000/change-password/${token}">Reset Password</a>`
+    );
     return true;
+  }
+
+  @Mutation(() => UserResponse)
+  async changePassword(
+    @Arg("newPassword") newPassword: string,
+    @Arg("token") token: string,
+    @Ctx() { em, redis, req }: MyContext
+  ): Promise<UserResponse> {
+    if (newPassword.length <= 3) {
+      return {
+        errors: [
+          {
+            field: "newPassword",
+            message: "length must be greater than 3",
+          },
+        ],
+      };
+    }
+    const key = FORGOT_PASSWORD_PREFIX + token;
+    const userId = await redis.get(key);
+    if (!userId) {
+      return {
+        errors: [
+          {
+            field: "token",
+            message: "Token invalid",
+          },
+        ],
+      };
+    }
+
+    const user = await em.findOne(User, { id: parseInt(userId) });
+
+    if (!user) {
+      return {
+        errors: [
+          {
+            field: "token",
+            message: "User no longer exists",
+          },
+        ],
+      };
+    }
+    const hashedPassword = await argon2.hash(newPassword);
+    user.password = hashedPassword;
+    await em.persistAndFlush(user);
+
+    await redis.del(key);
+    req.session!.userId = user.id; // log in user
+
+    return { user };
   }
 }
