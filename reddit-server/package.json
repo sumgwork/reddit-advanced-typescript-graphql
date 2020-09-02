@@ -5,8 +5,7 @@
   "main": "index.js",
   "scripts": {
     "watch": "tsc -w",
-    "dev": "nodemon dist/index.js",
-    "create:migration": "npx mikro-orm migration:create"
+    "dev": "nodemon dist/index.js"
   },
   "keywords": [
     "Typescript",
@@ -38,17 +37,10 @@
     "express-session": "^1.17.1",
     "graphql": "^15.3.0",
     "ioredis": "^4.17.3",
-    "mikro-orm": "^3.6.15",
     "nodemailer": "^6.4.11",
     "pg": "^8.3.2",
     "type-graphql": "^1.0.0",
+    "typeorm": "^0.2.25",
     "uuid": "^8.3.0"
-  },
-  "mikro-orm": {
-    "useTsNode": true,
-    "configPaths": [
-      "./src/mikro-orm.config.ts",
-      "./dist/mikro-orm.config.js"
-    ]
   }
 }
