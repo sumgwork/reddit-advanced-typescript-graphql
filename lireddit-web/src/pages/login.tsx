@@ -15,6 +15,7 @@ interface loginProps {}
 const Login: React.FC<loginProps> = () => {
   const [, loginFn] = useLoginMutation();
   const router = useRouter();
+  const nextPage = router.query.next;
   return (
     <Wrapper variant="small">
       <Formik
@@ -27,7 +28,7 @@ const Login: React.FC<loginProps> = () => {
           if (response.data?.login.errors) {
             setErrors(toErrorMap(response.data.login.errors));
           } else if (response.data?.login.user) {
-            router.push("/");
+            router.push(typeof nextPage === "string" ? nextPage : "/");
           }
         }}
       >
