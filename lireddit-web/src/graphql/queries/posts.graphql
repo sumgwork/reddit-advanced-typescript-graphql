@@ -1,8 +1,8 @@
-query getPosts {
-  posts {
+query getPosts($limit: Int!, $cursor: String) {
+  posts(limit: $limit, cursor: $cursor) {
     id
     title
-    text
+    textSnippet
     points
     creatorId
     createdAt

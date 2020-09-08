@@ -13,10 +13,11 @@ import { User } from "./entities/User";
 import { PostResolver } from "./resolvers/post";
 import { UserResolver } from "./resolvers/user";
 import { MyContext } from "./types";
+import path from "path";
 
 const main = async () => {
   // Type ORM Setup
-  await createConnection({
+  const conn = await createConnection({
     type: "postgres",
     database: "lireddit2",
     username: "postgres",
@@ -24,7 +25,10 @@ const main = async () => {
     logging: true,
     synchronize: true, // for creating tables automatically
     entities: [User, Post],
+    migrations: [path.join(__dirname, "./migrations/*")],
   });
+
+  conn.runMigrations();
 
   const app = express();
 

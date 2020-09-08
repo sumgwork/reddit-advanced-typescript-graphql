@@ -1,24 +1,43 @@
 import { withUrqlClient } from "next-urql";
-import { Navbar } from "../components/Navbar";
 import { createUrqlClient } from "../utils/createUrqlClient";
 import { Layout } from "../components/Layout";
 import { useGetPostsQuery } from "../generated/graphql";
 import NextLink from "next/link";
-import { Link } from "@chakra-ui/core";
+import { Link, Stack, Heading, Box, Text, Flex, Button } from "@chakra-ui/core";
 
 const Index = () => {
-  const [{ data, fetching }] = useGetPostsQuery();
+  const [{ data, fetching }] = useGetPostsQuery({
+    variables: {
+      limit: 10,
+    },
+  });
   return (
     <Layout>
-      <NextLink href="/create-post">
-        <Link>Create Post</Link>
-      </NextLink>
-      <br />
+      <Flex align="center">
+        <Heading>Reddit</Heading>
+        <NextLink href="/create-post">
+          <Link ml="auto">Create Post</Link>
+        </NextLink>
+      </Flex>
       <br />
       {fetching && <div>Loading</div>}
-      {!fetching &&
-        data &&
-        data.posts.map((post) => <div key={post.id}>{post.title}</div>)}
+      {!fetching && data && (
+        <Stack spacing={8}>
+          {data.posts.map((post) => (
+            <Box p={5} shadow="md" borderWidth="1px" key={post.id}>
+              <Heading fontSize="xl">{post.title}</Heading>
+              <Text mt={4}>{post.textSnippet}</Text>
+            </Box>
+          ))}
+        </Stack>
+      )}
+      {!fetching && data && (
+        <Flex>
+          <Button m="auto" my={8}>
+            Load more
+          </Button>
+        </Flex>
+      )}
     </Layout>
   );
 };

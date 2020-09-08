@@ -20,6 +20,12 @@ export type Query = {
 };
 
 
+export type QueryPostsArgs = {
+  cursor?: Maybe<Scalars['String']>;
+  limit: Scalars['Int'];
+};
+
+
 export type QueryPostArgs = {
   id: Scalars['Float'];
 };
@@ -33,6 +39,7 @@ export type Post = {
   creatorId: Scalars['Float'];
   createdAt: Scalars['String'];
   updatedAt: Scalars['String'];
+  textSnippet: Scalars['String'];
 };
 
 export type User = {
@@ -221,14 +228,17 @@ export type WhoAmIQuery = (
   )> }
 );
 
-export type GetPostsQueryVariables = Exact<{ [key: string]: never; }>;
+export type GetPostsQueryVariables = Exact<{
+  limit: Scalars['Int'];
+  cursor?: Maybe<Scalars['String']>;
+}>;
 
 
 export type GetPostsQuery = (
   { __typename?: 'Query' }
   & { posts: Array<(
     { __typename?: 'Post' }
-    & Pick<Post, 'id' | 'title' | 'text' | 'points' | 'creatorId' | 'createdAt' | 'updatedAt'>
+    & Pick<Post, 'id' | 'title' | 'textSnippet' | 'points' | 'creatorId' | 'createdAt' | 'updatedAt'>
   )> }
 );
 
@@ -336,11 +346,11 @@ export function useWhoAmIQuery(options: Omit<Urql.UseQueryArgs<WhoAmIQueryVariab
   return Urql.useQuery<WhoAmIQuery>({ query: WhoAmIDocument, ...options });
 };
 export const GetPostsDocument = gql`
-    query getPosts {
-  posts {
+    query getPosts($limit: Int!, $cursor: String) {
+  posts(limit: $limit, cursor: $cursor) {
     id
     title
-    text
+    textSnippet
     points
     creatorId
     createdAt
